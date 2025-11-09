@@ -5,9 +5,9 @@ import fetch from "node-fetch";
 const app = express();
 
 // ✅ CORS complet deschis
-app.use(cors({ origin: "*", methods: ["GET"] }));
+app.use(cors({ origin: "*" }));
 
-// ✅ Endpoint pentru overlay
+// ✅ Endpoint principal
 app.get("/subs", async (req, res) => {
   try {
     const user = req.query.user || "anduu14";
@@ -24,7 +24,7 @@ app.get("/subs", async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
-    console.error("❌ Error fetching subs:", err.message);
+    console.error("❌ Error:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
