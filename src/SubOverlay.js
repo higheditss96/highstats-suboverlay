@@ -27,8 +27,9 @@ function SubOverlay() {
   };
 
   useEffect(() => {
-    fetchChannel();
-  }, [user]);
+  fetchChannel();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [user]);
 
   // WebSocket connection
   useEffect(() => {
