@@ -32,12 +32,24 @@ function SubOverlay() {
 }, [user]);
 
   // WebSocket connection
-  useEffect(() => {
-    let ws;
-    let reconnectTimeout;
+useEffect(() => {
+  let ws;
+  let reconnectTimeout;
 
-    const connectWS = () => {
-      ws = new WebSocket("wss://ws.kick.com/chatroom/" + user);
+  const connectWS = async () => {
+    try {
+      // Fetch channel info first
+      const res = await fetch(`https://kick.com/api/v1/channels/${user}`);
+      const data = await res.json();
+
+      if (!data.chatroom?.id) {
+        setStatus("❌ No chatroom ID found for this user.");
+        return;
+      }
+
+      const chatroomId = data.chatroom.id;
+
+      ws = new WebSocket(`wss://ws.kick.com/chatroom/${chatroomId}`);
 
       ws.onopen = () => {
         setStatus("✅ Connected to Kick WebSocket");
@@ -45,12 +57,11 @@ function SubOverlay() {
 
       ws.onmessage = (msg) => {
         try {
-          const data = JSON.parse(msg.data);
+          const event = JSON.parse(msg.data);
 
-          // detect subscription events
           if (
-            data.event === "SubscriptionEvent" ||
-            data.event === "GiftedSubscriptionEvent"
+            event.event === "SubscriptionEvent" ||
+            event.event === "GiftedSubscriptionEvent"
           ) {
             setSubs((prev) => prev + 1);
           }
@@ -68,15 +79,19 @@ function SubOverlay() {
         setStatus("❌ WebSocket error, retrying...");
         ws.close();
       };
-    };
+    } catch (err) {
+      setStatus("❌ Failed to connect to Kick WS");
+    }
+  };
 
-    connectWS();
+  connectWS();
 
-    return () => {
-      if (ws) ws.close();
-      clearTimeout(reconnectTimeout);
-    };
-  }, [user]);
+  return () => {
+    if (ws) ws.close();
+    clearTimeout(reconnectTimeout);
+  };
+}, [user]);
+
 
   // Update goal progress
   useEffect(() => {
