@@ -1,101 +1,80 @@
 import React, { useEffect, useState } from "react";
-import "./SubOverlay.css";
 
-export default function SubOverlay() {
+function SubOverlay() {
   const [subs, setSubs] = useState(0);
-  const [gifted, setGifted] = useState(0);
-  const [goal, setGoal] = useState(100);
-  const [color, setColor] = useState("#00ffaa");
-  const [font, setFont] = useState("Poppins");
-  const [username, setUsername] = useState("");
-  const [useGoal, setUseGoal] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const user = params.get("user");
-    const col = params.get("color") || "#00ffaa";
-    const fontParam = params.get("font") || "Poppins";
-    const goalEnabled = params.get("useGoal") === "true";
-    const goalValue = parseInt(params.get("goal") || 100);
+  // Citim parametrii din URL (trimiși de pe site)
+  const params = new URLSearchParams(window.location.search);
+  const username = params.get("user") || "hyghman";
+  const color = params.get("color") || "#00ffaa";
+  const font = params.get("font") || "Poppins";
 
-    setUsername(user);
-    setColor(col);
-    setFont(fontParam);
-    setUseGoal(goalEnabled);
-    setGoal(goalValue);
-
-    if (user) fetchSubs(user);
-
-    const interval = setInterval(() => {
-      if (user) fetchSubs(user);
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchSubs = async (user) => {
+  // ✅ Endpoint Kick API pentru informații despre canal (inclusiv subs)
+  const fetchKickSubs = async () => {
     try {
-      const subRes = await fetch(
-        `https://kick.com/api/v1/channels/${user}/subscriptions`
-      );
-      const subData = await subRes.json();
+      const response = await fetch(`https://kick.com/api/v2/channels/${username}`);
+      const data = await response.json();
 
-      const giftedRes = await fetch(
-        `https://kick.com/api/v1/channels/${user}/subscriptions/gifted`
-      );
-      const giftedData = await giftedRes.json();
-
-      setSubs(subData?.total || 0);
-      setGifted(giftedData?.total || 0);
-    } catch (err) {
-      console.error("Error fetching subs data:", err);
+      // În Kick API, numărul de subs este în `subscribers_count` (uneori null)
+      const subCount = data?.subscribers_count || 0;
+      setSubs(subCount);
+    } catch (error) {
+      console.error("Eroare la preluarea subs:", error);
+      setSubs(0);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const total = subs + gifted;
-  const progress = Math.min((total / goal) * 100, 100);
-  const remaining = goal - total;
+  useEffect(() => {
+    fetchKickSubs();
+    const interval = setInterval(fetchKickSubs, 15000); // actualizare la 15 secunde
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div
-      className="suboverlay-container"
       style={{
-        color,
+        height: "100vh",
+        width: "100vw",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "transparent",
         fontFamily: font,
+        color: color,
       }}
     >
-      <div className="suboverlay-count">
-        {total.toLocaleString()}
-        <span className="suboverlay-label"> subs total</span>
-      </div>
-
-      {useGoal && (
-        <div
-          className="suboverlay-goal"
-          style={{
-            border: `2px solid ${color}`,
-          }}
-        >
-          <div
-            className="suboverlay-progress"
+      {loading ? (
+        <p style={{ fontSize: "28px", fontWeight: 600 }}>Loading...</p>
+      ) : (
+        <>
+          <h1
             style={{
-              width: `${progress}%`,
-              background: color,
-            }}
-          ></div>
-
-          <span
-            className="suboverlay-text"
-            style={{
-              color: progress > 50 ? "#000" : "#fff",
+              fontSize: "60px",
+              fontWeight: "800",
+              margin: 0,
+              textShadow: `0px 0px 12px ${color}50`,
             }}
           >
-            {remaining > 0
-              ? `${remaining} subs left`
-              : "🎉 Goal achieved!"}
-          </span>
-        </div>
+            {subs.toLocaleString()}
+          </h1>
+          <p
+            style={{
+              fontSize: "24px",
+              fontWeight: 500,
+              marginTop: "4px",
+              textShadow: `0px 0px 8px ${color}40`,
+            }}
+          >
+            subs total
+          </p>
+        </>
       )}
     </div>
   );
 }
+
+export default SubOverlay;
