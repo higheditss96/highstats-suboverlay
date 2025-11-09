@@ -15,22 +15,22 @@ function SubOverlay() {
   const showPfp = params.get("showPfp") === "false" ? false : true;
 
   // === Fetch from Kick API ===
-  const fetchSubs = async () => {
-    try {
-      const res = await fetch(`https://kick.com/api/v2/channels/${user}`);
-      const data = await res.json();
-
-      setSubs(data.subscribers_count ?? 0);
-      setGifted(data.subscriber_gifts_count ?? 0);
-      setProfilePic(data.user?.profile_pic || "");
-      setDebug(`✅ Updated at ${new Date().toLocaleTimeString()}`);
-    } catch (err) {
-      console.error("Kick API error:", err);
-      setDebug(`❌ API error: ${err.message}`);
-    }
-  };
-
   useEffect(() => {
+    const fetchSubs = async () => {
+      try {
+        const res = await fetch(`https://kick.com/api/v2/channels/${user}`);
+        const data = await res.json();
+
+        setSubs(data.subscribers_count ?? 0);
+        setGifted(data.subscriber_gifts_count ?? 0);
+        setProfilePic(data.user?.profile_pic || "");
+        setDebug(`✅ Updated at ${new Date().toLocaleTimeString()}`);
+      } catch (err) {
+        console.error("Kick API error:", err);
+        setDebug(`❌ API error: ${err.message}`);
+      }
+    };
+
     fetchSubs();
     const interval = setInterval(fetchSubs, 10000);
     return () => clearInterval(interval);
