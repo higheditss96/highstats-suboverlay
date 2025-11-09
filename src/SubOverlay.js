@@ -1,136 +1,163 @@
 import React, { useEffect, useState } from "react";
 
-// === Import Google Fonts ===
-const fontsLink = document.createElement("link");
-fontsLink.href =
-  "https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Outfit:wght@400;700;900&family=Orbitron:wght@500;700&family=Montserrat:wght@600;900&family=Inter:wght@500;800&display=swap";
-fontsLink.rel = "stylesheet";
-document.head.appendChild(fontsLink);
-
 function SubOverlay() {
-  const [subs, setSubs] = useState(0);
-  const [gifted, setGifted] = useState(0);
-  const [profilePic, setProfilePic] = useState("");
-  const [debug, setDebug] = useState("Loading...");
-
-  // === URL parameters ===
   const params = new URLSearchParams(window.location.search);
   const user = params.get("user") || "hyghman";
   const color = params.get("color") || "#00ffaa";
-  const font =
-    params.get("font") ||
-    "Poppins, Outfit, Montserrat, Orbitron, Inter, sans-serif";
-  const goal = Number(params.get("goal")) || 10;
-  const showPfp = params.get("showPfp") === "false" ? false : true;
+  const goal = parseInt(params.get("goal")) || 100;
+  const font = params.get("font") || "Poppins";
+  const showPfp = params.get("showPfp") === "true";
+  const goalColor = params.get("goalColor") || "#ffffff";
 
-  // === Fetch from Kick API ===
+  const [subs, setSubs] = useState(0);
+  const [goalProgress, setGoalProgress] = useState(0);
+  const [pfp, setPfp] = useState("");
+  const [status, setStatus] = useState("Connecting...");
+
+  // Fetch channel info
+  const fetchChannel = async () => {
+    try {
+      const res = await fetch(`https://kick.com/api/v1/channels/${user}`);
+      const data = await res.json();
+      setSubs(data.subscriberCount || 0);
+      setPfp(data.user?.profile_pic || "");
+    } catch (err) {
+      console.error("Error fetching channel:", err);
+    }
+  };
+
   useEffect(() => {
-    const fetchSubs = async () => {
-      try {
-        const res = await fetch(`https://kick.com/api/v2/channels/${user}`);
-        const data = await res.json();
-
-        setSubs(data.subscribers_count ?? 0);
-        setGifted(data.subscriber_gifts_count ?? 0);
-        setProfilePic(data.user?.profile_pic || "");
-        setDebug(`✅ Updated at ${new Date().toLocaleTimeString()}`);
-      } catch (err) {
-        console.error("Kick API error:", err);
-        setDebug(`❌ API error: ${err.message}`);
-      }
-    };
-
-    fetchSubs();
-    const interval = setInterval(fetchSubs, 10000);
-    return () => clearInterval(interval);
+    fetchChannel();
   }, [user]);
 
-  const total = subs + gifted;
-  const progress = Math.min((total / goal) * 100, 100);
+  // WebSocket connection
+  useEffect(() => {
+    let ws;
+    let reconnectTimeout;
+
+    const connectWS = () => {
+      ws = new WebSocket("wss://ws.kick.com/chatroom/" + user);
+
+      ws.onopen = () => {
+        setStatus("✅ Connected to Kick WebSocket");
+      };
+
+      ws.onmessage = (msg) => {
+        try {
+          const data = JSON.parse(msg.data);
+
+          // detect subscription events
+          if (
+            data.event === "SubscriptionEvent" ||
+            data.event === "GiftedSubscriptionEvent"
+          ) {
+            setSubs((prev) => prev + 1);
+          }
+        } catch (err) {
+          console.error("WebSocket message error:", err);
+        }
+      };
+
+      ws.onclose = () => {
+        setStatus("⚠️ WS closed, retrying in 5s...");
+        reconnectTimeout = setTimeout(connectWS, 5000);
+      };
+
+      ws.onerror = () => {
+        setStatus("❌ WebSocket error, retrying...");
+        ws.close();
+      };
+    };
+
+    connectWS();
+
+    return () => {
+      if (ws) ws.close();
+      clearTimeout(reconnectTimeout);
+    };
+  }, [user]);
+
+  // Update goal progress
+  useEffect(() => {
+    const percent = Math.min((subs / goal) * 100, 100);
+    setGoalProgress(percent);
+  }, [subs, goal]);
 
   return (
     <div
       style={{
-        height: "100vh",
-        width: "100vw",
-        background: "transparent",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        color,
         fontFamily: font,
-        textTransform: "uppercase",
-        letterSpacing: "1px",
+        color: color,
         textAlign: "center",
+        padding: "20px",
+        background: "transparent",
       }}
     >
-      {/* Profile Picture */}
-      {showPfp && profilePic && (
+      {showPfp && pfp && (
         <img
-          src={profilePic}
-          alt="profile"
+          src={pfp}
+          alt="pfp"
           style={{
-            width: "90px",
-            height: "90px",
+            width: 70,
+            height: 70,
             borderRadius: "50%",
-            marginBottom: "14px",
-            objectFit: "cover",
-            boxShadow: "0 4px 10px rgba(0,0,0,0.5)",
+            marginBottom: 10,
+            border: `2px solid ${color}`,
           }}
         />
       )}
 
-      {/* Sub Goal Text */}
       <div
         style={{
-          fontSize: "42px",
-          fontWeight: "900",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "10px",
-          fontFamily: `"Outfit", "Poppins", "Orbitron", sans-serif`,
-          filter: "drop-shadow(0 4px 4px rgba(0,0,0,0.6))",
+          fontSize: "34px",
+          fontWeight: 700,
+          color: color,
+          textShadow: "2px 2px 4px rgba(0,0,0,0.4)",
         }}
       >
-        <span style={{ opacity: 0.85 }}>SUB GOAL:</span>
-        <span>{total}/{goal}</span>
+        SUB GOAL: {subs}/{goal}
       </div>
 
-      {/* Progress Bar */}
       <div
         style={{
-          width: "250px",
-          height: "10px",
-          borderRadius: "8px",
-          background: "#181818",
-          marginTop: "12px",
+          width: "80%",
+          height: 8,
+          background: "#222",
+          borderRadius: 6,
+          margin: "10px auto",
           overflow: "hidden",
-          boxShadow: "0 4px 8px rgba(0,0,0,0.4)",
         }}
       >
         <div
           style={{
-            width: `${progress}%`,
+            width: `${goalProgress}%`,
             height: "100%",
             background: color,
-            transition: "width 0.8s ease-in-out",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+            transition: "width 0.5s ease",
           }}
-        />
+        ></div>
       </div>
 
-      {/* Debug Info */}
       <div
         style={{
-          marginTop: "14px",
-          fontSize: "12px",
-          opacity: 0.5,
-          fontFamily: "monospace",
+          color: goalColor,
+          fontWeight: 600,
+          fontSize: "14px",
+          marginTop: 6,
+          textShadow: "1px 1px 2px rgba(0,0,0,0.6)",
         }}
       >
-        {debug}
+        🎯 {Math.max(goal - subs, 0)} left to {goal}
+      </div>
+
+      <div
+        style={{
+          fontSize: "12px",
+          opacity: 0.7,
+          marginTop: 8,
+        }}
+      >
+        {status}
       </div>
     </div>
   );
