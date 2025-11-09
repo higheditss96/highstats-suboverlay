@@ -20,6 +20,7 @@ function SubOverlay() {
 
     const connectWS = async () => {
       try {
+        // Fetch channel data
         const res = await fetch(`https://kick.com/api/v1/channels/${user}`);
         const data = await res.json();
 
@@ -31,24 +32,20 @@ function SubOverlay() {
         const chatroomId = data.chatroom.id;
         setPfp(data.user.profile_pic);
 
-        ws = new WebSocket(`wss://ws.kick.com/chatroom/${chatroomId}`);
+        // Connect to the new Kick WebSocket
+        ws = new WebSocket(`wss://ws2.kick.com/socket.io/?EIO=4&transport=websocket`);
 
         ws.onopen = () => {
           setStatus("✅ Connected to Kick WebSocket");
+          // Join room
+          ws.send(`42["join",{"room":"chatrooms:${chatroomId}"}]`);
         };
 
         ws.onmessage = (msg) => {
-          try {
-            const event = JSON.parse(msg.data);
+          const data = msg.data;
 
-            if (
-              event.event === "SubscriptionEvent" ||
-              event.event === "GiftedSubscriptionEvent"
-            ) {
-              setSubs((prev) => prev + 1);
-            }
-          } catch (err) {
-            console.error("WebSocket message error:", err);
+          if (data.includes("SubscriptionEvent") || data.includes("GiftedSubscriptionEvent")) {
+            setSubs((prev) => prev + 1);
           }
         };
 
@@ -74,13 +71,11 @@ function SubOverlay() {
     };
   }, [user]);
 
-  // Debug mode for local testing (press D to add subs)
+  // Debug mode: press "D" to simulate a sub
   useEffect(() => {
     if (debugMode) {
       const handleKey = (e) => {
-        if (e.key.toLowerCase() === "d") {
-          setSubs((s) => s + 1);
-        }
+        if (e.key.toLowerCase() === "d") setSubs((s) => s + 1);
       };
       window.addEventListener("keydown", handleKey);
       return () => window.removeEventListener("keydown", handleKey);
