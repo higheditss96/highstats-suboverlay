@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
 
+// === Import Google Fonts ===
+const fontsLink = document.createElement("link");
+fontsLink.href =
+  "https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Outfit:wght@400;700;900&family=Orbitron:wght@500;700&family=Montserrat:wght@600;900&family=Inter:wght@500;800&display=swap";
+fontsLink.rel = "stylesheet";
+document.head.appendChild(fontsLink);
+
 function SubOverlay() {
   const [subs, setSubs] = useState(0);
   const [gifted, setGifted] = useState(0);
@@ -10,7 +17,9 @@ function SubOverlay() {
   const params = new URLSearchParams(window.location.search);
   const user = params.get("user") || "hyghman";
   const color = params.get("color") || "#00ffaa";
-  const font = params.get("font") || "Bebas Neue";
+  const font =
+    params.get("font") ||
+    "Poppins, Outfit, Montserrat, Orbitron, Inter, sans-serif";
   const goal = Number(params.get("goal")) || 10;
   const showPfp = params.get("showPfp") === "false" ? false : true;
 
@@ -53,6 +62,7 @@ function SubOverlay() {
         fontFamily: font,
         textTransform: "uppercase",
         letterSpacing: "1px",
+        textAlign: "center",
       }}
     >
       {/* Profile Picture */}
@@ -61,11 +71,11 @@ function SubOverlay() {
           src={profilePic}
           alt="profile"
           style={{
-            width: "80px",
-            height: "80px",
+            width: "90px",
+            height: "90px",
             borderRadius: "50%",
-            marginBottom: "12px",
-            boxShadow: `0 0 12px ${color}70`,
+            marginBottom: "14px",
+            boxShadow: `0 0 18px ${color}90`,
           }}
         />
       )}
@@ -73,14 +83,14 @@ function SubOverlay() {
       {/* Sub Goal Text */}
       <div
         style={{
+          fontSize: "40px",
+          fontWeight: "900",
+          textShadow: `0 0 15px ${color}70`,
           display: "flex",
-          flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
           gap: "10px",
-          fontSize: "38px",
-          fontWeight: "900",
-          textShadow: `0 0 10px ${color}80`,
+          fontFamily: `"Outfit", "Poppins", "Orbitron", sans-serif`,
         }}
       >
         <span style={{ opacity: 0.9 }}>SUB GOAL:</span>
@@ -90,20 +100,22 @@ function SubOverlay() {
       {/* Progress Bar */}
       <div
         style={{
-          width: "220px",
+          width: "250px",
           height: "8px",
-          borderRadius: "5px",
-          background: "#202020",
-          marginTop: "8px",
+          borderRadius: "10px",
+          background: "#1a1a1a",
+          marginTop: "10px",
           overflow: "hidden",
+          boxShadow: `0 0 10px ${color}40 inset`,
         }}
       >
         <div
           style={{
             width: `${progress}%`,
             height: "100%",
-            background: color,
+            background: `linear-gradient(90deg, ${color}, #00ffbb, ${color})`,
             transition: "width 0.8s ease-in-out",
+            boxShadow: `0 0 10px ${color}`,
           }}
         />
       </div>
@@ -111,7 +123,7 @@ function SubOverlay() {
       {/* Debug Info (optional, ascunde în OBS) */}
       <div
         style={{
-          marginTop: "10px",
+          marginTop: "12px",
           fontSize: "12px",
           opacity: 0.5,
           fontFamily: "monospace",
