@@ -10,17 +10,17 @@ body {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  width: 100%;
   text-align: center;
+  color: white;
 }
 
 .suboverlay-pfp {
-  width: 100px;
-  height: 100px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   object-fit: cover;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.6);
   margin-bottom: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
 .suboverlay-text {
@@ -28,36 +28,31 @@ body {
   font-weight: 800;
   color: white;
   filter: drop-shadow(2px 2px 5px rgba(0, 0, 0, 0.8));
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .suboverlay-label {
   color: #ffffff;
 }
 
-.suboverlay-count {
-  color: var(--goal-color, #00ffaa);
-}
-
 .suboverlay-bar-bg {
-  width: 70%;
+  width: 65%;
   height: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
   overflow: hidden;
-  margin-top: 8px;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  margin-top: 6px;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 .suboverlay-bar-fill {
   height: 100%;
   transition: width 0.4s ease;
-  border-radius: 6px;
 }
 
 .suboverlay-status {
-  font-size: 14px;
-  margin-top: 12px;
-  opacity: 0.85;
+  font-size: 13px;
+  margin-top: 10px;
   color: #6effc9;
+  opacity: 0.85;
 }

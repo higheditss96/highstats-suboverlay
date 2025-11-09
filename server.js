@@ -1,65 +1,39 @@
-// server.js — ascultă evenimente Kick realtime (subs/gifts)
 import express from "express";
-import fetch from "node-fetch";
 import cors from "cors";
-import { WebSocketServer } from "ws";
+import fetch from "node-fetch";
 
 const app = express();
 app.use(cors());
 
-const PORT = process.env.PORT || 4000;
+let lastSubs = 0;
+let lastGifted = 0;
 
-// 🟢 Creează un server WebSocket pentru overlay
-const wss = new WebSocketServer({ noServer: true });
-let lastData = {};
-
-wss.on("connection", (ws) => {
-  console.log("Client connected to WS");
-  ws.send(JSON.stringify({ type: "init", data: lastData }));
-});
-
-// 🟢 Ascultă conexiuni WebSocket
-const server = app.listen(PORT, () => {
-  console.log(`✅ Server live pe http://localhost:${PORT}`);
-});
-
-server.on("upgrade", (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    wss.emit("connection", ws, request);
-  });
-});
-
-// 🔄 Periodic actualizează datele de la Kick
-const CHANNEL = "hyghman"; // schimbă cu userul tău implicit
-
-async function getKickData() {
+// actualizare la 3s
+async function updateStats(user) {
   try {
-    const res = await fetch(`https://kick.com/api/v2/channels/${CHANNEL}`);
+    const res = await fetch(`https://kick.com/api/v1/channels/${user}`);
     const data = await res.json();
 
-    const info = {
-      username: data.slug,
-      subs: data.subscribers_count || 0,
-      gifted: data.subscriber_gifts_count || 0,
-      updatedAt: new Date().toISOString(),
-    };
+    const subCount = data.subscriber_badges?.length
+      ? data.subscriber_badges.reduce((acc, x) => acc + (x.subscriptions_count || 0), 0)
+      : data.subscriptionsCount || 0;
 
-    lastData = info;
-    // Trimite la toți clienții WS
-    wss.clients.forEach((client) => {
-      if (client.readyState === 1) {
-        client.send(JSON.stringify({ type: "update", data: info }));
-      }
-    });
-
-    console.log("🔁 Actualizat:", info);
+    lastSubs = subCount || 0;
   } catch (err) {
-    console.error("❌ Eroare Kick API:", err);
+    console.error("❌ Error fetching channel:", err.message);
   }
 }
 
-// Rulează la 10 secunde
-setInterval(getKickData, 10000);
-getKickData();
+// endpoint pentru frontend
+app.get("/subs", async (req, res) => {
+  const user = req.query.user || "anduu14";
+  await updateStats(user);
+  res.json({
+    subs: lastSubs,
+    gifted: lastGifted,
+    total: lastSubs + lastGifted,
+  });
+});
 
-app.get("/", (req, res) => res.send("Kick Realtime API is running ✅"));
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log(`✅ Backend running on port ${PORT}`));
