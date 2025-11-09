@@ -2,154 +2,110 @@ import React, { useEffect, useState } from "react";
 
 function SubOverlay() {
   const [subs, setSubs] = useState(0);
-  const [goal, setGoal] = useState(100);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [gifted, setGifted] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Preluăm parametrii din URL
   const params = new URLSearchParams(window.location.search);
-  const username = params.get("user") || "hyghman";
+  const user = params.get("user") || "hyghman";
   const color = params.get("color") || "#00ffaa";
   const font = params.get("font") || "Poppins";
-  const goalParam = Number(params.get("goal")) || 100;
+  const goal = Number(params.get("goal")) || 1000;
+  const goalColor = params.get("goalColor") || "#ffffff";
 
+  // Fetch subs + gifted
   useEffect(() => {
-    const fetchSubs = async () => {
+    async function fetchData() {
       try {
-        const res = await fetch(`https://kick.com/api/v2/channels/${username}`);
-        if (!res.ok) throw new Error("Failed to fetch channel data");
+        const res = await fetch(`https://kick.com/api/v2/channels/${user}`);
         const data = await res.json();
 
-        const subCount = data?.subscribers_count ?? 0;
+        const subCount = data.subscribers_count || 0;
+        const giftedCount = data.subscriber_gifts_count || 0;
+
         setSubs(subCount);
-        setGoal(goalParam);
+        setGifted(giftedCount);
+        setIsLoaded(true);
       } catch (err) {
-        console.error("Eroare la preluarea subs:", err);
-        setError(true);
-      } finally {
-        setLoading(false);
+        console.error("Eroare la Kick API:", err);
+        setIsLoaded(true);
       }
-    };
+    }
 
-    fetchSubs();
-    const interval = setInterval(fetchSubs, 15000);
+    fetchData();
+    const interval = setInterval(fetchData, 15000); // refresh la 15 sec
     return () => clearInterval(interval);
-  }, [username, goalParam]);
+  }, [user]);
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: font,
-          color: color,
-          fontSize: "28px",
-          fontWeight: "600",
-        }}
-      >
-        Loading...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: font,
-          color: "#ff4444",
-          fontSize: "24px",
-        }}
-      >
-        Failed to load subscriber data 😢
-      </div>
-    );
-  }
-
-  const remaining = Math.max(goal - subs, 0);
+  const totalSubs = subs + gifted;
+  const progress = Math.min((totalSubs / goal) * 100, 100);
+  const remaining = Math.max(goal - totalSubs, 0);
 
   return (
     <div
       style={{
         height: "100vh",
         width: "100vw",
+        backgroundColor: "transparent",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "transparent",
-        color: color,
         fontFamily: font,
-        textAlign: "center",
-        transition: "all 0.3s ease",
+        color: color,
       }}
     >
-      <h1
-        style={{
-          fontSize: "70px",
-          fontWeight: "900",
-          margin: 0,
-          textShadow: `0 0 20px ${color}60`,
-        }}
-      >
-        {subs.toLocaleString()}
-      </h1>
-      <p
-        style={{
-          fontSize: "28px",
-          fontWeight: "600",
-          margin: 0,
-          textShadow: `0 0 10px ${color}30`,
-        }}
-      >
-        subs total
-      </p>
+      {!isLoaded ? (
+        <p style={{ fontSize: "20px", opacity: 0.6 }}>Loading...</p>
+      ) : (
+        <>
+          {/* Total subs (abonamente + gifted) */}
+          <h1 style={{ fontSize: "80px", margin: "0", fontWeight: 900 }}>
+            {totalSubs.toLocaleString()}
+          </h1>
 
-      <div
-        style={{
-          marginTop: "30px",
-          width: "60%",
-          height: "20px",
-          background: "#222",
-          borderRadius: "10px",
-          overflow: "hidden",
-          position: "relative",
-        }}
-      >
-        <div
-          style={{
-            width: `${Math.min((subs / goal) * 100, 100)}%`,
-            height: "100%",
-            background: color,
-            transition: "width 0.4s ease-in-out",
-          }}
-        ></div>
-        <span
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            color: "#000",
-            fontSize: "16px",
-            fontWeight: "700",
-            background: "rgba(255,255,255,0.7)",
-            borderRadius: "4px",
-            padding: "2px 8px",
-          }}
-        >
-          {remaining > 0
-            ? `${remaining.toLocaleString()} left to ${goal.toLocaleString()}`
-            : "Goal reached!"}
-        </span>
-      </div>
+          <p style={{ fontSize: "28px", margin: "6px 0" }}>subs total</p>
+
+          {/* Goal bar */}
+          <div
+            style={{
+              width: "70%",
+              maxWidth: "900px",
+              height: "28px",
+              borderRadius: "14px",
+              backgroundColor: goalColor,
+              overflow: "hidden",
+              marginTop: "18px",
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                width: `${progress}%`,
+                height: "100%",
+                backgroundColor: color,
+                transition: "width 0.6s ease-in-out",
+              }}
+            />
+            <span
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                fontWeight: "bold",
+                fontSize: "18px",
+                color:
+                  goalColor.toLowerCase() === "#ffffff" ||
+                  goalColor.toLowerCase() === "white"
+                    ? "#000"
+                    : "#fff",
+              }}
+            >
+              🎯 {remaining.toLocaleString()} left to {goal.toLocaleString()}
+            </span>
+          </div>
+        </>
+      )}
     </div>
   );
 }
