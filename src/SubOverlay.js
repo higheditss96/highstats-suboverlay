@@ -75,7 +75,8 @@ function SubOverlay() {
             height: "90px",
             borderRadius: "50%",
             marginBottom: "14px",
-            boxShadow: `0 0 18px ${color}90`,
+            objectFit: "cover",
+            boxShadow: "0 4px 10px rgba(0,0,0,0.5)",
           }}
         />
       )}
@@ -83,17 +84,17 @@ function SubOverlay() {
       {/* Sub Goal Text */}
       <div
         style={{
-          fontSize: "40px",
+          fontSize: "42px",
           fontWeight: "900",
-          textShadow: `0 0 15px ${color}70`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           gap: "10px",
           fontFamily: `"Outfit", "Poppins", "Orbitron", sans-serif`,
+          filter: "drop-shadow(0 4px 4px rgba(0,0,0,0.6))",
         }}
       >
-        <span style={{ opacity: 0.9 }}>SUB GOAL:</span>
+        <span style={{ opacity: 0.85 }}>SUB GOAL:</span>
         <span>{total}/{goal}</span>
       </div>
 
@@ -101,29 +102,29 @@ function SubOverlay() {
       <div
         style={{
           width: "250px",
-          height: "8px",
-          borderRadius: "10px",
-          background: "#1a1a1a",
-          marginTop: "10px",
+          height: "10px",
+          borderRadius: "8px",
+          background: "#181818",
+          marginTop: "12px",
           overflow: "hidden",
-          boxShadow: `0 0 10px ${color}40 inset`,
+          boxShadow: "0 4px 8px rgba(0,0,0,0.4)",
         }}
       >
         <div
           style={{
             width: `${progress}%`,
             height: "100%",
-            background: `linear-gradient(90deg, ${color}, #00ffbb, ${color})`,
+            background: color,
             transition: "width 0.8s ease-in-out",
-            boxShadow: `0 0 10px ${color}`,
+            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
           }}
         />
       </div>
 
-      {/* Debug Info (optional, ascunde în OBS) */}
+      {/* Debug Info */}
       <div
         style={{
-          marginTop: "12px",
+          marginTop: "14px",
           fontSize: "12px",
           opacity: 0.5,
           fontFamily: "monospace",
